@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <title>Deco.ai</title>
+</head>
+
+<body onload="init()">
+<!--Header-->
+<div class="container">
+    <div class="row">
+        <div class="col-8">
+            <br>
+            <h1>Deco.ai</h1>
+        </div>
+        <div class="col-2">
+            <br>
+            <button class="btn btn-warning" data-toggle="modal" data-target="#network">Network</button>
+        </div>
+        <div class="col-2">
+            <br>
+            <button class="btn btn-warning" data-toggle="modal" data-target="#exampleModal">Login</button>
+        </div>
+    </div>
+</div>
+<br><br>
+
+<!--The current blockchain-->
+<div class="container">
+    <h3>{{proof.message}}</h3>
+    Your block was added to blockchain as block #{{proof.index}}<br>
+    The transactions added in this block are as follows:<br>
+    <ul class="list-group list-group-flush">
+        {% for transaction in proof.transactions %}
+        <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center">
+            Sender: {{transaction.sender}}<br>
+            Recipient: {{transaction.recipient}}<br>
+            Recipient Balance: {{transaction.recipient_unspent_outputs}}<br>
+            Data: {{transaction.data}}<br>
+            Smart Contract: {{transaction.smart_contract}}<br>
+            TransacitonID: {{transaction.transactionID}}<br>
+             <span class="badge badge-primary badge-pill">Amount: {{transaction.amount}}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    <br>
+    Your account was rewarded {{proof.transactions[0].amount}} credits.<br>
+    You guessed "{{proof.proof}}" correctly.<br>
+    Hash of last block: {{proof.previous_hash}}<br>
+    <button class="btn btn-warning" onclick="location.href = '/mine'">Mine again</button>
+    <button class="btn btn-warning" onclick="location.href = '/'">Go Back Home</button>
+
+
+</div>
+<br><br>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+<style>body{background-color: powderblue;} .modal-content{background-color: powderblue;}</style>
+</body>
+</html>
