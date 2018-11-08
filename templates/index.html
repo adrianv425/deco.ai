@@ -9,71 +9,84 @@
 <body>
 <!--Header-->
 <div class="container">
-    <div class="row">
-        <div class="col-8">
+    <div class="row justify-content-between align-item-center">
+        <div class="col-5">
             <br>
-            <h1>Deco.ai</h1>
+            <h1 onclick="location.href='/'">Deco.ai</h1>
         </div>
-        <div class="col-2">
+        <div class="col-5 text-right">
             <br>
             <button class="btn btn-warning" data-toggle="modal" data-target="#network">Network</button>
-        </div>
-        <div class="col-2">
-            <br>
-            <button class="btn btn-warning" data-toggle="modal" data-target="#exampleModal">Login</button>
+            <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#exampleModalLong">Blockchain</button>
         </div>
     </div>
+    <p class="subtitle">A Decentralized Ecosystem for Artificial Intelligence</p>
 </div>
-<br><br>
-
-<!--The current blockchain-->
-<div class="container">
-    <h3>The current chain:
-        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#exampleModalLong">See Entire Blockchain</button>
-    </h3>
 </div>
 <br><br>
 
 <!--Run AI Models-->
-<div class="container">
+<div class="container events">
+    <div class="container">
     <h3>Start using AI services today.</h3>
-    Enter the AI model's transaction ID here:
-    <div class="input-group mb-3">
-        <input type="text" class="form-control" placeholder="transactionID" aria-label="Recipient's username" aria-describedby="button-addon2">
-        <div class="input-group-append">
-            <button class="btn btn-warning" type="button" id="button-addon2">Run!</button>
+    Browse the collection of AI services or enter a transaction ID of a known service.
+    <div class="row justify-content-around align-items-center">
+        <div class="col-1">
+        <button style="margin-right: 5px;" class="btn btn-warning" onclick="location.href = '/transactions/uploads'">Browse</button><br>
+        </div>
+        <div class="col-6">
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="transactionID" aria-label="Recipient's username" aria-describedby="button-addon2" id="run_transactionID">
+                <div class="input-group-append">
+                    <button class="btn btn-warning" type="button" id="button-addon2" onclick="confirmAI()">Run!</button>
+                </div>
+            </div>
         </div>
     </div>
+        </div>
 </div>
 <br>
 
 <!--Upload an AI Model-->
-<div class="container">
+<div class="container events">
+    <div class="container">
     <h3>Upload an AI model.</h3>
     <div class="form-group">
-        <label for="comment">By uploading your AI model to Deco.ai, you are allowing anybody to purchase the service under the terms you provide on the smart contract. You will be compensated immediately following purchase. Please note, this is still in experimental phase. Do not upload proprietary AI models. Copy and paste your code here:</label>
-        <textarea class="form-control" rows="5" id="comment"></textarea>
-        <button type="button" class="btn btn-warning btn-sm btn-block" type="button" id="button-addon2">Upload!</button>
+        By uploading your AI model to Deco.ai, you are allowing anybody to purchase the service under the terms you provide on the smart contract. You will be compensated immediately following purchase. Please note, this is still in experimental phase. Do not upload proprietary AI models.
+        <label for="comment">Please enter your address:<br></label>
+        <input type="text" class="form-control" value="edfe1b7c2561427cb43af066d312cd3f" id="upload_sender">
+        <label>Enter the title to your program:</label>
+        <input type="text" class="form-control" value="Hello World" placeholder="Title of Program" id="upload_title">
+        <label for="comment">Copy and paste your code here:</label>
+        <textarea class="form-control" rows="5" id="upload_data" >global g1&#10;g1="Hello!"</textarea>
+        <label for="comment">Smart Contract (JSON style):</label>
+        <textarea class="form-control" rows="5" id="upload_contract">{ "amount": 0, "uses" : -1 }</textarea>
+        <button type="button" class="btn btn-warning btn-sm btn-block" type="button" id="button-addon2" onclick="newUpload()">Upload!</button>
+    </div>
     </div>
 </div>
 <br>
 
 <!--Become A Miner-->
-<div class="container">
+<div class="container events">
+    <div class="container">
     <h3>Become a Miner today.</h3>
     Earn mining rewards while you sleep. Leave your computer mining on the Deco.ai network to start earning passive income while supporting the growth of the network.
     <br>
     <button class="btn btn-warning" onclick="location.href = '/mine'">Mine the next block</button>
 </div>
+</div>
 <br><br>
 
 <!--Upload Data-->
-<div class="container">
+<div class="container events">
+    <div class="container">
     <h3>Upload data sets for training.</h3>
     <div class="form-group">
         <label for="comment">Do you have great data set skills? You can get paid everytime somebody uses your data for their AI models. By uploading your data to Deco.ai, you are allowing anybody to purchase the data under the terms you provide on the smart contract. You will be compensated immediately following the purchase. Please note, this is still in experimental phase. Do not upload proprietary data. Copy and paste your data here:</label>
         <textarea class="form-control" rows="5" id="comment"></textarea>
         <button type="button" class="btn btn-warning btn-sm btn-block" id="button-addon2">Upload!</button>
+    </div>
     </div>
 </div>
 <!-- Modal -->
@@ -81,7 +94,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLongTitle">Network Nodes</h5>
+                <h3 class="modal-title" id="exampleModalLongTitle">Network Nodes</h3>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
             </div>
@@ -104,7 +117,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLongTitle">Login</h5>
+                <h3 class="modal-title" id="exampleModalLongTitle">Login</h3>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
             </div>
@@ -121,7 +134,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLongTitle">Deco.ai Public blockchain</h5>
+                <h3 class="modal-title" id="exampleModalLongTitle">Deco.ai Public blockchain</h3>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
             </div>
@@ -162,5 +175,6 @@
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/main.css') }}">
 </body>
-<style>body{background-color: powderblue;} .modal-content{background-color: powderblue;}</style></html>'
+</html>

@@ -165,28 +165,50 @@ class Blockchain(object):
         :param sender: <str> Address of the Sender
         :param recipient: <str> Address of the Recipient
         :param amount: <int> Amount
-        :param data: <str> any message or data wanted to upload by user
-        :param contract: <str> the terms on which the user will allow others to use the data
+        :param data: <json> any message or data wanted to upload by user
+        :param contract: <json> the terms on which the user will allow others to use the data
         :return: <int> The index of the Block that will hold this transaction
         """
 
+        contract = json.loads(contract)
         balance = self.check_balance(sender)
 
         if balance < amount:
-            return "Transaction not added.\nNot enough balance."
+            print("Transaction not added.\nNot enough balance.")
+            return -1
+
+        required_amount = contract["amount"]
+
+        if required_amount is not None:
+            if recipient is not '1':
+                if amount < required_amount:
+                    return -1
+
+        txnID = str(uuid4()).replace('-', '')
+        code_return = {}
+        if not isinstance(data, str):
+            if data['method'] == 'BUY':
+                print("Executing code")
+                exec(data['code'], code_return)
+                data = code_return['g1']
 
         self.current_transactions.append({
-                'sender': sender,
-                'recipient': recipient,
-                'amount': amount,
-                'data': data,
-                'sender_unspent_outputs': balance - amount,
-                'recipient_unspent_outputs': self.check_balance(recipient) + amount,
-                'smart_contract': contract,
-                'transactionID': str(uuid4()).replace('-', '')
-            })
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount,
+            'data': data,
+            'sender_unspent_outputs': balance - amount,
+            'recipient_unspent_outputs': self.check_balance(recipient) + amount,
+            'smart_contract': contract,
+            'transactionID': txnID
+        })
 
-        return self.last_block['index'] + 1
+        response = {
+            'block_index': self.last_block['index'] + 1,
+            'transactionID': txnID
+        }
+
+        return response
 
     def proof_of_work(self, last_block):
         """
@@ -268,13 +290,7 @@ def mine():
 
     #We must receive an aware for finding the proof
     #The sender is "0" to signify that this node has mined a new coin
-    blockchain.new_transaction(
-        sender="0",
-        recipient=node_identifier,
-        amount=15,
-        data="mining reward",
-        contract="N/A",
-    )
+    blockchain.new_transaction("0", node_identifier, 15, "mining reward", "{\"amount\":0}")
 
     #Forge the new Block by adding it to the chain
     previous_hash = blockchain.hash(last_block)
@@ -288,7 +304,7 @@ def mine():
         'previous_hash': block['previous_hash'],
     }
 
-    return render_template('mining.html', proof=response, code="<h1>Blah</h1>"), 302
+    return render_template('mining.html', proof=response, chain=blockchain.chain, nodes=list(blockchain.nodes)), 302
 
 @app.route('/nodes/register/')
 @app.route('/nodes/register/<string:values>')
@@ -301,23 +317,6 @@ def register_nodes(values=None):
 
     return redirect("/", 302)
 
-@app.route('/nodes/resolve', methods=['GET'])
-def consensus():
-    replaced = blockchain.resolve_conflicts()
-
-    if replaced:
-        response = {
-            'message': 'Our chain was replaced',
-            'chain': blockchain.chain
-        }
-
-    else:
-        response = {
-            'message': 'Our chain is authoritative',
-            'chain': blockchain.chain
-        }
-
-    return jsonify(response), 200
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
@@ -347,12 +346,15 @@ def upload():
         return 'Missing values', 400
 
     #Create a new Transaction
-    index = blockchain.new_transaction(values['sender'], '1', 0, values['data'], values['contract'])
+    response = blockchain.new_transaction(values['sender'], '1', 0, values['data'], values['contract'])
 
-    response = {
-        'message': index
-    }
-    return jsonify(response), 201
+    return response, 200
+
+
+@app.route('/transactions/uploads')
+def show_uploads():
+    chain = blockchain.chain
+    return render_template('showUploads.html', chain=chain, nodes=list(blockchain.nodes)), 200
 
 
 @app.route('/transactions/ai', methods=['POST'])
@@ -368,21 +370,56 @@ def run_ai():
     chain = blockchain.chain
     code = ""
     smart_contract = ""
+    response = {}
 
     for block in chain:
         for trans in block['transactions']:
             if trans['transactionID'] == values['transactionID']:
-                code = trans['data']
+                code = trans['data']['code']
                 recipient = trans['sender']
-                smart_contract = trans['smart_contract']
+                smart_contract = json.dumps(trans['smart_contract'])
 
-    response = blockchain.new_transaction(values['sender'], recipient, values['amount'], "AI purchase", smart_contract)
+    if code is not "":
+        c = {
+            'code': code,
+            'method': "BUY"
+        }
+        response = blockchain.new_transaction(values['sender'], recipient, int(values['amount']), c, smart_contract)
+    else:
+        response['block_index'] = -2
 
     print(response)
-    print("Executing code")
-    exec(code)
+    if response['block_index'] != -1:
+        print(response['transactionID'])
+    elif response['block_index'] == -2:
+        print("No code found with that transaction ID.")
+    else:
+        print("Not enough credits")
 
-    return "Done", 200
+    return response['transactionID'], 200
+
+
+@app.route('/transactions/ai/<string:transactionID>')
+def ai_results(transactionID):
+    chain = blockchain.chain
+    result = ""
+    for block in chain:
+        for trans in block['transactions']:
+            if trans['transactionID'] == transactionID:
+                result = trans['data']
+    return render_template('runAI.html', chain=chain, data=result, nodes=list(blockchain.nodes), modelTitle=transactionID), 200
+
+
+@app.route('/transactions/confirm/<string:transactionID>')
+def confirm(transactionID):
+    chain = blockchain.chain
+    for block in chain:
+        for trans in block['transactions']:
+            if trans['transactionID'] == transactionID:
+                if trans['data']['method'] == 'SELL':
+                    return render_template('confirm.html', model=trans, chain=blockchain.chain, nodes=list(blockchain.nodes)), 200
+
+    return render_template('notValid.html'), 200
 
 
 @app.route('/chain', methods=['GET'])

@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css?family=Syncopate');
+@import url('https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300');
+
+body{
+    background: #1e5799; /* Old browsers */
+    background: -moz-linear-gradient(-45deg, #1e5799 0%, #7db9e8 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(-45deg, #1e5799 0%,#7db9e8 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(135deg, #1e5799 0%,#7db9e8 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#7db9e8',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+    font-family: 'Open Sans Condensed', sans-serif;
+    color: white;
+}
+.modal-body{
+    font-size: 120%;
+}
+.modal-content{
+    background: #1e5799; /* Old browsers */
+    background: -moz-linear-gradient(45deg, #1e5799 0%, #449fe5 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(45deg, #1e5799 0%,#449fe5 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(45deg, #1e5799 0%,#449fe5 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#449fe5',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+}
+.card{
+    background: #1e5799; /* Old browsers */
+background: -moz-linear-gradient(top, #1e5799 0%, #7db9e8 100%); /* FF3.6-15 */
+background: -webkit-linear-gradient(top, #1e5799 0%,#7db9e8 100%); /* Chrome10-25,Safari5.1-6 */
+background: linear-gradient(to bottom, #1e5799 0%,#7db9e8 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#7db9e8',GradientType=0 ); /* IE6-9 */
+border-radius: 20px;
+    margin: 5px 0 5px 0;
+}
+.input-group>.custom-select:not(:first-child),
+.input-group>.form-control:not(:first-child),
+.form-control{
+    border-radius: 20px;
+    font-size: 110%;
+}
+.btn{
+    border-radius:20px;
+    font-size: 110%;
+}
+.btn-run-now{
+    background: #1e5799;
+    color: white;
+}
+h1, h2, h3 {
+    font-family: 'Syncopate', sans-serif;
+}
+.text-black{
+    color: black;
+}
+.events{
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius:20px;
+    padding: 15px;
+    font-size: 120%;
+}
+.subtitle{
+    font-size: 110%;
+}
