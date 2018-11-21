@@ -30,6 +30,17 @@
     You will execute "{{model.data.title}}" on the Deco.ai network.<br>
     This transaction will cost you {{model.smart_contract.amount}} credits.<br>
     <br>
+    Inputs:
+    {% if model.smart_contract.inputs != undefined %}
+    <br>
+        {% for input in model.smart_contract.inputs %}
+            {{ input }}
+            <input class="form-control" id="'{{input}}'" placholder="'{{input}}'">
+        {% endfor %}
+    {% else %}
+        N/A
+    {% endif %}
+    <br><br>
     Would you like to continue?
     <button class="btn btn-success" onclick="run_ai();">Continue</button>
     <button class="btn btn-danger" onclick="location.href = '/transactions/uploads'">Cancel</button><br><br>

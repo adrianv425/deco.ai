@@ -1,5 +1,6 @@
 import hashlib
 import json
+import ujson
 from time import time
 from uuid import uuid4
 from urllib.parse import urlparse
@@ -8,6 +9,12 @@ from numpy import exp, array, dot
 import requests
 import socket
 from flask import Flask, redirect, jsonify, request, render_template, url_for
+from Crypto.PublicKey import RSA
+from Crypto import Random
+from Crypto.Cipher import PKCS1_OAEP
+import ast
+import base64
+import zlib
 
 
 class Blockchain(object):
@@ -27,6 +34,7 @@ class Blockchain(object):
 
         #Create the genesis block
         self.new_block(previous_hash=1, proof=100)
+        self.master_private_key = RSA.generate(1024, Random.new().read)
 
     def new_block(self, proof, previous_hash=None):
         """
@@ -162,7 +170,7 @@ class Blockchain(object):
     def new_transaction(self, sender, recipient, amount, data, contract):
         """"
         #Adds a new transaction to the list of transactions
-        :param sender: <str> Address of the Sender
+        :param sender: <obj> key object of the Sender
         :param recipient: <str> Address of the Recipient
         :param amount: <int> Amount
         :param data: <json> any message or data wanted to upload by user
@@ -185,10 +193,13 @@ class Blockchain(object):
                     return -1
 
         txnID = str(uuid4()).replace('-', '')
-        code_return = {}
+        code_return = {'g1': ""}
         if not isinstance(data, str):
             if data['method'] == 'BUY':
-                print("Executing code")
+                print()
+                print("----------------------Executing code---------------------")
+                print(data['code'])
+                print("---------------------------------------------------------")
                 exec(data['code'], code_return)
                 data = code_return['g1']
 
@@ -235,8 +246,8 @@ class Blockchain(object):
         """
 
         #We must make sure that the dictionary is ordered, or we'll have inconsistent hashes
-        block_string = json.dumps(block, sort_keys=True).encode()
-        return hashlib.sha256(block_string).hexdigest()
+        block_string = json.dumps(block, sort_keys=True)
+        return hashlib.sha256(block_string.encode()).hexdigest()
 
     def check_balance(self, address):
         """
@@ -272,6 +283,16 @@ class Blockchain(object):
         #Returns the last Block in the chain
         return self.chain[-1]
 
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (bytes, bytearray)):
+            return obj.decode()
+            # <- or any other encoding of your choice
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)
+
+
 #Insantiate our Node
 app = Flask(__name__)
 
@@ -286,7 +307,12 @@ blockchain = Blockchain()
 def mine():
     #We run the proof of work algorithm to get the next proof
     last_block = blockchain.last_block
+    print()
+    print('---------Last Block ------------')
+    print(last_block)
     proof = blockchain.proof_of_work(last_block)
+    print('--------------------------------')
+    print()
 
     #We must receive an aware for finding the proof
     #The sender is "0" to signify that this node has mined a new coin
@@ -338,17 +364,50 @@ def new_transaction():
 
 @app.route('/transactions/upload', methods=['POST'])
 def upload():
+    print()
+    print("--------Attempting to upload to blockchain---------")
     values = request.get_json()
 
     #Check that the required fields are in the POST'ed data
-    required = ['sender', 'data', 'contract']
+    required = ['sender_public', 'sender_private', 'data', 'contract']
     if not all(k in values for k in required):
         return 'Missing values', 400
 
-    #Create a new Transaction
-    response = blockchain.new_transaction(values['sender'], '1', 0, values['data'], values['contract'])
+    #encrypt with master key
+    public = blockchain.master_private_key.publickey()
+    print()
+    print("---Unencrypted----")
+    print(len(values['data']['code']))
+    print("-------------------")
+    print()
+    cipher = PKCS1_OAEP.new(public)
+    cipher_text = {}
+    length_values = len(values['data']['code'])
+    ENCRYPTION_LIMIT = 86
+    if length_values > ENCRYPTION_LIMIT:
+        iterations = (length_values // ENCRYPTION_LIMIT) + 1
+        x = 0
+        y = ENCRYPTION_LIMIT
+        for i in range(iterations):
+            text = values['data']['code'][x:y].encode()
+            cipher_text[str(i)] = cipher.encrypt(text)
+            x += ENCRYPTION_LIMIT
+            y += ENCRYPTION_LIMIT
+    else:
+        text = values['data']['code'].encode()
+        cipher_text['0'] = cipher.encrypt(text)
 
-    return response, 200
+    values['data']['code'] = str(cipher_text)
+    print('----Encrypted with Master Key-----')
+    print(cipher_text)
+    print('----------------------------------')
+    print()
+
+
+    #Create a new Transaction
+    response = blockchain.new_transaction(values['sender_public'], '1', 0, values['data'], values['contract'])
+
+    return jsonify(response), 200
 
 
 @app.route('/transactions/uploads')
@@ -372,12 +431,38 @@ def run_ai():
     smart_contract = ""
     response = {}
 
+    private = blockchain.master_private_key
+    cipher = PKCS1_OAEP.new(private)
+
+    print()
+    print("----------------Looking for requested service-----------------------")
     for block in chain:
         for trans in block['transactions']:
             if trans['transactionID'] == values['transactionID']:
-                code = trans['data']['code']
+                print("*****Found the code******")
+                print(type(trans['data']['code']))
+                print(trans['data']['code'])
+                print("______________________")
+                c = ast.literal_eval(trans['data']['code'])
+                print(c)
+                print(type(c))
+                if '1' not in c:
+                    print("Less than")
+                    print(c['0'])
+                    code = cipher.decrypt(c['0'])
+                else:
+                    print("Greater than")
+                    for t in c:
+                        print(c[str(t)])
+                        text = c[str(t)]
+                        cipher_text = cipher.decrypt(text)
+                        code += cipher_text.decode()
+                print(code)
                 recipient = trans['sender']
                 smart_contract = json.dumps(trans['smart_contract'])
+                
+    print("---------------------------------------------------------------------")
+    print()
 
     if code is not "":
         c = {
@@ -388,9 +473,10 @@ def run_ai():
     else:
         response['block_index'] = -2
 
-    print(response)
     if response['block_index'] != -1:
-        print(response['transactionID'])
+        print()
+        print("*********Success. Added new transaction to pool*************")
+        print()
     elif response['block_index'] == -2:
         print("No code found with that transaction ID.")
     else:
@@ -429,6 +515,21 @@ def full_chain():
         'length': len(blockchain.chain)
     }
     return jsonify(response), 200
+
+
+@app.route('/key-pair', methods=['GET'])
+def key_pair():
+    random_n = Random.new().read
+    private_key = RSA.generate(1024, random_n)
+    public = private_key.publickey()
+    f = open('mypublickey.pem', 'wb')
+    f2 = open('myprivatekey.pem', 'wb')
+    f.write(public.exportKey('PEM'))
+    f2.write(private_key.exportKey('PEM'))
+    f.close()
+    f2.close()
+
+    return str(public.exportKey("PEM")) + str(private_key.exportKey("PEM")), 200
 
 
 @app.route('/', methods=['GET'])

@@ -16,6 +16,7 @@
         </div>
         <div class="col-5 text-right">
             <br>
+            <button class="btn btn-warning" data-toggle="modal" data-target="#login">Login</button>
             <button class="btn btn-warning" data-toggle="modal" data-target="#network">Network</button>
             <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#exampleModalLong">Blockchain</button>
         </div>
@@ -52,9 +53,11 @@
     <div class="container">
     <h3>Upload an AI model.</h3>
     <div class="form-group">
-        By uploading your AI model to Deco.ai, you are allowing anybody to purchase the service under the terms you provide on the smart contract. You will be compensated immediately following purchase. Please note, this is still in experimental phase. Do not upload proprietary AI models.
-        <label for="comment">Please enter your address:<br></label>
-        <input type="text" class="form-control" value="edfe1b7c2561427cb43af066d312cd3f" id="upload_sender">
+        By uploading your AI model to Deco.ai, you are allowing anybody to purchase the service under the terms you provide on the smart contract. You will be compensated immediately following purchase. Please note, this is still in experimental phase. Do not upload proprietary AI models.<br>
+        <label for="comment">Please enter your public address:<br></label>
+        <textarea type="text" class="form-control" id="upload_sender_public" placeholder="Public address">-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDxhJprTuOCQecBio3pgldEEm6J\nKiR/a9egfchTJV7pssYF7atYiC+7EMbwQkQoqGrruLDhPTQM+opwzPT3B8nsaXBf\nSfbOjh08xsH4GyTqc0MTYIGQjmhVTtNbr90IOUAZUUqlvx/MZFevfLlDMfHzsnO+\nYWLFlJGsVmf80d7bjQIDAQAB\n-----END PUBLIC KEY-----</textarea>
+        <label for="comment">Please enter your private address:<br></label>
+        <textarea type="text" class="form-control" placeholder="Private address" id="upload_sender_private">-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQDLqIz+/+l45c19mWwTD3cE2CG+FBeqe8cjMsYkRTDkSvD1xs5Xfj+1SqhgwPHyOPZA3ovOsB6OWePulwjNGI3d67wRmUQMmHxkfiGV5lTHdzCefJ+Znttm8WCnE6Xs+aZoM5lwf869u1nIllBlJnkP6nVjZKATD+Z8Gj4XvSFmfwIDAQABAoGBAKgCP3bqRYAQDErOM6Mxwd0ENCnrx25EOI7oBx/K2L+st0X6oST6qLH1ihxvb+mEZlozfaCgGEUVEP02KfOQiw8M6d373CPSFYFuFEkJls9EgVDzNQ368w+sWqyf27QKDEuqNGgE5zXSWi6NvM6ouUw3xZhMW1iY0SoSPII2MDFBAkEA4B7eOdmLdPd6UZcLaodgcxK6jEUl6vvAty+ZCJ/nyGvzXBRSP1jJG/tiPM6pz/qOUzf/tL6JQ4j94CVe7IyvYQJBAOigkpAC3FM6WYBiyiul9wV6Sa7W2tTxZeZZ8SlZk0chjSxCCSkT+rksuZUjXrkBxD2q/IBRt2LyBIP6umItQd8CQQCs0GB+rvZPnLweyZ8t53FBigF6Q593T+RL3FHeSp7I9iRSrgC1g9qezvny9VAPZJ32IUn0rq7c+nb4LRjCwcBBAkAHcJs/X9gMEWGraX1tx/EOi8qvfM+i39WSeG3uFJ9RNxF8yN/iIHF0WqnUyzzMTfIoxr8sm3ByCat7TRmI6kmhAkAjMAbE4cy8mpTzN+J2rhllWFF14HVU2G/ikmjZk6Sq5IMD4qAFS4NYPWnTvnuV+wZKDSH122ThyKwgYEjRb23Q-----END RSA PRIVATE KEY-----'</textarea>
         <label>Enter the title to your program:</label>
         <input type="text" class="form-control" value="Hello World" placeholder="Title of Program" id="upload_title">
         <label for="comment">Copy and paste your code here:</label>
@@ -113,7 +116,7 @@
     </div>
 </div>
 <!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModal" aria-hidden="true">
+<div class="modal fade" id="login" tabindex="-1" role="dialog" aria-labelledby="exampleModal" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -121,7 +124,9 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
             </div>
-            <div class="modal-body">*Your Username*
+            <div class="modal-body">
+                <div id="key"></div>
+                <button class="btn btn-warning" id="getKey" onclick="getKey()">Get A Key</button>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

@@ -6,7 +6,8 @@ function redirect(){
 }
 
 function newUpload(){
-    var sender = document.getElementById("upload_sender").value;
+    var sender_public = document.getElementById("upload_sender_public").value;
+    var sender_private = document.getElementById("upload_sender_private").value;
     var data = document.getElementById("upload_data").value;
     var contract = document.getElementById("upload_contract").value;
     var title = document.getElementById("upload_title").value;
@@ -16,7 +17,8 @@ function newUpload(){
     httpReq.open("POST", "/transactions/upload", true);
     httpReq.setRequestHeader('Content-Type', 'application/json');
     httpReq.send(JSON.stringify({
-        sender: sender,
+        sender_public: sender_public,
+        sender_private: sender_private,
         data: {
             method: 'SELL',
             code: data,
@@ -69,4 +71,17 @@ function confirmAI(){
 
 function confirm_ai(transactionID){
     location.replace("/transactions/confirm/" + transactionID);
+}
+
+function getKey(){
+    xhttp = new XMLHttpRequest();
+    xhttp.open("GET", "/key-pair", true)
+    xhttp.setRequestHeader('Content-Type', 'application/json')
+    xhttp.send()
+    xhttp.onload = function(){
+        document.getElementById("key").innerHTML = "<div class='container text-wrap'><h4 class='font-weight-bold' style='color: red;'>Please write this down and store it securely.</h4>";
+        document.getElementById("key").innerHTML += xhttp.response;
+        document.getElementById("key").innerHTML += "</div>";
+        document.getElementById("getKey").innerHTML = "Get a different key";
+    }
 }

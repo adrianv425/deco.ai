@@ -30,7 +30,7 @@
     <h3>Transaction {{modelTitle}} confirmed.</h3>
     <p>Your transaction has been recorded on the blockchain.<br>
     The AI model output is below:<br>
-    <li class="list-group-item list-group-item-primary justify-content-between align-items-center">{{data}}</li>
+    <li class="list-group-item list-group-item-primary justify-content-between align-items-center">{{data|safe}}</li>
     </p>
     <button class="btn btn-warning" onclick="location.href = '/'">Home</button>
     <button class="btn btn-warning" onclick="location.href = '/mine'">Mine next block</button>
