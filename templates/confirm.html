@@ -35,7 +35,10 @@
     <br>
         {% for input in model.smart_contract.inputs %}
             {{ input }}
-            <input class="form-control" id="'{{input}}'" placholder="'{{input}}'">
+            <input class="form-control" id="input{{ loop.index0 }}" placholder="'{{input}}'">
+            {% if loop.last %}
+            <div id="loop_count" style="display: none;">{{ loop.index }}</div>
+            {% endif %}
         {% endfor %}
     {% else %}
         N/A

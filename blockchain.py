@@ -181,27 +181,48 @@ class Blockchain(object):
         contract = json.loads(contract)
         balance = self.check_balance(sender)
 
-        if balance < amount:
+        if balance < amount and recipient is not '4':
             print("Transaction not added.\nNot enough balance.")
             return -1
 
         required_amount = contract["amount"]
 
         if required_amount is not None:
-            if recipient is not '1':
+            if recipient is not '1' and recipient is not '4':
                 if amount < required_amount:
                     return -1
 
         txnID = str(uuid4()).replace('-', '')
-        code_return = {'g1': ""}
         if not isinstance(data, str):
             if data['method'] == 'BUY':
+                if 'weights' in data:
+                    if 'inputs' in data:
+                        code_return = {'output': "", 'weights': data['weights'], 'inputs': data['inputs']}
+                    else:
+                        code_return = {'output': "", 'weights': data['weights']}
+                else:
+                    if 'inputs' in data:
+                        code_return = {'output': "", 'inputs': data['inputs']}
+                    else:
+                        code_return = {'output': ""}
                 print()
                 print("----------------------Executing code---------------------")
                 print(data['code'])
                 print("---------------------------------------------------------")
                 exec(data['code'], code_return)
-                data = code_return['g1']
+                data = code_return['output']
+            elif data['method'] == 'TRAIN':
+                code_return = {'output': "", 'training_data': data['training_data'], 'training_output': ""}
+                print("---------------Training-------------------")
+                print(data['training_data'])
+                exec(data['code'], code_return)
+                data = {
+                    'output': code_return['output'],
+                    'code': str(self.master_encoder(data['code'])),
+                    'method': 'SELL',
+                    'weights': str(code_return['training_output']),
+                    'title': "Enhanced " + data['title']
+                }
 
         self.current_transactions.append({
             'sender': sender,
@@ -277,6 +298,27 @@ class Blockchain(object):
         guess = f'{last_proof}{proof}{last_hash}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:4] == "0000"
+
+    def master_encoder(self, code_string):
+        # encrypt with master key
+        public = blockchain.master_private_key.publickey()
+        cipher = PKCS1_OAEP.new(public)
+        cipher_text = {}
+        length_values = len(code_string)
+        ENCRYPTION_LIMIT = 86
+        if length_values > ENCRYPTION_LIMIT:
+            iterations = (length_values // ENCRYPTION_LIMIT) + 1
+            x = 0
+            y = ENCRYPTION_LIMIT
+            for i in range(iterations):
+                text = code_string[x:y].encode()
+                cipher_text[str(i)] = cipher.encrypt(text)
+                x += ENCRYPTION_LIMIT
+                y += ENCRYPTION_LIMIT
+        else:
+            text = code_string.encode()
+            cipher_text['0'] = cipher.encrypt(text)
+        return cipher_text
 
     @property
     def last_block(self):
@@ -362,6 +404,36 @@ def new_transaction():
     return jsonify(response), 201
 
 
+@app.route('/transactions/data-upload', methods=['POST'])
+def data_upload():
+    print()
+    print("--------Attempting to upload data to blockchain---------")
+    values = request.get_json()
+
+    #Check that the required fields are in the POST'ed data
+    required = ['sender_public', 'sender_private', 'data', 'contract']
+    if not all(k in values for k in required):
+        return 'Missing values', 400
+
+    print()
+    print("---Unencrypted----")
+    print(len(values['data']['code']))
+    print("-------------------")
+    print()
+    code_string = blockchain.master_encoder(values['data']['code'])
+    values['data']['code'] = str(code_string)
+    print('----Encrypted with Master Key-----')
+    print(code_string)
+    print('----------------------------------')
+    print()
+
+
+    #Create a new Transaction
+    response = blockchain.new_transaction(values['sender_public'], '1', 0, values['data'], values['contract'])
+
+    return jsonify(response), 200
+
+
 @app.route('/transactions/upload', methods=['POST'])
 def upload():
     print()
@@ -373,33 +445,15 @@ def upload():
     if not all(k in values for k in required):
         return 'Missing values', 400
 
-    #encrypt with master key
-    public = blockchain.master_private_key.publickey()
     print()
     print("---Unencrypted----")
     print(len(values['data']['code']))
     print("-------------------")
     print()
-    cipher = PKCS1_OAEP.new(public)
-    cipher_text = {}
-    length_values = len(values['data']['code'])
-    ENCRYPTION_LIMIT = 86
-    if length_values > ENCRYPTION_LIMIT:
-        iterations = (length_values // ENCRYPTION_LIMIT) + 1
-        x = 0
-        y = ENCRYPTION_LIMIT
-        for i in range(iterations):
-            text = values['data']['code'][x:y].encode()
-            cipher_text[str(i)] = cipher.encrypt(text)
-            x += ENCRYPTION_LIMIT
-            y += ENCRYPTION_LIMIT
-    else:
-        text = values['data']['code'].encode()
-        cipher_text['0'] = cipher.encrypt(text)
-
-    values['data']['code'] = str(cipher_text)
+    code_string = blockchain.master_encoder(values['data']['code'])
+    values['data']['code'] = str(code_string)
     print('----Encrypted with Master Key-----')
-    print(cipher_text)
+    print(code_string)
     print('----------------------------------')
     print()
 
@@ -416,6 +470,97 @@ def show_uploads():
     return render_template('showUploads.html', chain=chain, nodes=list(blockchain.nodes)), 200
 
 
+@app.route('/transactions/train-complete/<string:transactionID>')
+def train_results(transactionID):
+    chain = blockchain.chain
+    result = ""
+    for block in chain:
+        for trans in block['transactions']:
+            if trans['transactionID'] == transactionID:
+                result = trans['data']['output']
+    return render_template('runAI.html', chain=chain, data=result, nodes=list(blockchain.nodes), modelTitle=transactionID), 200
+
+
+@app.route('/transactions/training/<string:transactionID>')
+def getData(transactionID):
+    chain = blockchain.chain
+    for block in chain:
+        for trans in block['transactions']:
+            if trans['transactionID'] == transactionID:
+                if trans['data']['method'] == 'SELL':
+                    return render_template('training.html', model=trans, chain=chain, nodes=list(blockchain.nodes)), 200
+    return render_template('notValid.html'), 200
+
+@app.route('/transactions/train', methods=['POST'])
+def train_ai():
+    values = request.get_json()
+
+    # Check that the required fields are in the POST'ed data
+    required = ['sender', 'transactionID', 'training_data']
+    if not all(k in values for k in required):
+        return 'Missing values', 300
+
+    chain = blockchain.chain
+    code = ""
+    smart_contract = ""
+    response = {}
+    title = ""
+
+    private = blockchain.master_private_key
+    cipher = PKCS1_OAEP.new(private)
+
+    #look for requested model
+    for block in chain:
+        for trans in block['transactions']:
+            if trans['transactionID'] == values['transactionID']:
+                print("*****Found the code******")
+                title = trans['data']['title']
+                print(type(trans['data']['code']))
+                print(trans['data']['code'])
+                print("______________________")
+                c = ast.literal_eval(trans['data']['code'])
+                print(c)
+                print(type(c))
+                if '1' not in c:
+                    print("Less than")
+                    print(c['0'])
+                    code = cipher.decrypt(c['0'])
+                else:
+                    print("Greater than")
+                    for t in c:
+                        print(c[str(t)])
+                        text = c[str(t)]
+                        cipher_text = cipher.decrypt(text)
+                        code += cipher_text.decode()
+                print(code)
+                smart_contract = json.dumps(trans['smart_contract'])
+                break
+    print("---------------------------------------------------------------------")
+    print(type(values['training_data']))
+
+    if code is not "":
+        c = {
+            'code': code,
+            'method': "TRAIN",
+            'training_data': values['training_data'],
+            'title': title
+        }
+        response = blockchain.new_transaction(values['sender'], '4', 0, c, smart_contract)
+    else:
+        response['block_index'] = -2
+
+    if response['block_index'] != -1:
+        print()
+        print("*********Success. Added new transaction to pool*************")
+        print()
+    elif response['block_index'] == -2:
+        print("No code found with that transaction ID.")
+    else:
+        print("Not enough credits")
+
+    return response['transactionID'], 200
+
+
 @app.route('/transactions/ai', methods=['POST'])
 def run_ai():
     values = request.get_json()
@@ -430,6 +575,7 @@ def run_ai():
     code = ""
     smart_contract = ""
     response = {}
+    weights = ""
 
     private = blockchain.master_private_key
     cipher = PKCS1_OAEP.new(private)
@@ -446,6 +592,9 @@ def run_ai():
                 c = ast.literal_eval(trans['data']['code'])
                 print(c)
                 print(type(c))
+                if 'weights' in trans['data']:
+                    weights = trans['data']['weights']
+
                 if '1' not in c:
                     print("Less than")
                     print(c['0'])
@@ -465,10 +614,32 @@ def run_ai():
     print()
 
     if code is not "":
-        c = {
-            'code': code,
-            'method': "BUY"
-        }
+        if 'inputs' in values:
+            if weights is not "":
+                c = {
+                    'code': code,
+                    'method': "BUY",
+                    'inputs': values['inputs'],
+                    'weights': weights
+                }
+            else:
+                c = {
+                    'code': code,
+                    'method': "BUY",
+                    'inputs': values['inputs']
+                }
+        else:
+            if weights is not "":
+                c = {
+                    'code': code,
+                    'method': "BUY",
+                    'weights': weights
+                }
+            else:
+                c = {
+                    'code': code,
+                    'method': "BUY"
+                }
         response = blockchain.new_transaction(values['sender'], recipient, int(values['amount']), c, smart_contract)
     else:
         response['block_index'] = -2
