@@ -28,5 +28,4 @@ You can see the deco.ai interface.
 
 # CURRENT LIMITATION
 
-- only thing working on the frontend is the connection to the latest blockchain
-- the backend GET and POST request work for all transactions needed to run deco.ai
+- RSA encryption is working but it should not be trusted yet as there may security flaws in this implementation.
