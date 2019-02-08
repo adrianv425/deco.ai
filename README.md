@@ -22,6 +22,8 @@ This will intialized the blockchain and start the server.
 
 You can see the deco.ai interface.
 
+![deco.ai Home Page](/Home_Screenshot.png)
+
 - click network and click sync to get the latest blockchain
 
 # CURRENT LIMITATION
