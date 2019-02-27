@@ -17,9 +17,12 @@ import base64
 import zlib
 
 
+# Blockchain class, creates genesis block upon creation
 class Blockchain(object):
     def __init__(self):
+        # Set chain as empty array
         self.chain = []
+        # Create first transaction to create tokens
         self.current_transactions = [{
             'sender': "0",
             'recipient': "0",
@@ -30,10 +33,12 @@ class Blockchain(object):
             'smart_contract': "N/A",
             'transactionID': str(uuid4()).replace('-', ''),
         }]
+        # initialize a list for nodes
         self.nodes = set()
 
-        #Create the genesis block
+        # Add transaction to the genesis block and add it to the chain
         self.new_block(previous_hash=1, proof=100)
+        # Hold master key for sending out genesis tokens (not secure)
         self.master_private_key = RSA.generate(1024, Random.new().read)
 
     def new_block(self, proof, previous_hash=None):
@@ -44,8 +49,12 @@ class Blockchain(object):
         :return: New Block
         """
         transactions = [self.current_transactions.pop()]
-        carry_over_transactions = []
 
+        # Attempt to add all pending transactions to the next block
+        # It will not allow sending/receiving two transactions from the same address in the same block
+        # We will use a carry_over array to hold those transaction until next available block
+        carry_over_transactions = []
+        
         for t in self.current_transactions:
             s = 0
             for a in transactions:
@@ -70,6 +79,7 @@ class Blockchain(object):
                     transactions.append(t)
                     break
 
+        # Populate new block with new valid transactions
         block = {
             'index': len(self.chain) + 1,
             'timestamp': time(),
@@ -78,19 +88,19 @@ class Blockchain(object):
             'previous_hash': previous_hash or self.hash(self.chain[-1])
         }
 
-        #Reset the current list of transactions
+        # Reset the current list of transactions
         self.current_transactions = carry_over_transactions
 
+        # Add block to chain
         self.chain.append(block)
         return block
 
     def register_node(self, address):
         """
-        Add new node to node list
+        Add new node to node list. Needed to keep nodes synced across the network.
         :param address: <str> address of node
         :return: None
         """
-
         parsed_url = urlparse(address)
         if parsed_url.netloc:
             self.nodes.add(parsed_url.netloc)
@@ -102,11 +112,11 @@ class Blockchain(object):
 
     def valid_chain(self, chain):
         """
-        Determine valid blockchain
+        Determine valid blockchain. (Verify all hash values with next block's value)
         :param chain: <list> Blockchain
         :return: <bool> True if valid, False if not
         """
-
+        # We must verify the chain from the first block
         last_block = chain[0]
         current_index = 1
 
@@ -356,16 +366,16 @@ def mine():
     print('--------------------------------')
     print()
 
-    #We must receive an aware for finding the proof
-    #The sender is "0" to signify that this node has mined a new coin
+    # We must receive an award for finding the proof
+    # The sender is "0" to signify that this node has mined a new coin
     blockchain.new_transaction("0", node_identifier, 15, "mining reward", "{\"amount\":0}")
 
-    #Forge the new Block by adding it to the chain
+    # Forge the new Block by adding it to the chain
     previous_hash = blockchain.hash(last_block)
     block = blockchain.new_block(proof, previous_hash)
 
     response = {
-        'message': "New Block Forged",
+        'message': "New Block Created",
         'index': block['index'],
         'transactions': block['transactions'],
         'proof': block['proof'],
@@ -373,6 +383,10 @@ def mine():
     }
 
     return render_template('mining.html', proof=response, chain=blockchain.chain, nodes=list(blockchain.nodes)), 302
+
+#
+# DECO.AI API ROUTES
+#
 
 @app.route('/nodes/register/')
 @app.route('/nodes/register/<string:values>')
